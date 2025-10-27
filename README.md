@@ -1,16 +1,109 @@
-# voting_app
+# Point Voting System
 
-A new Flutter project.
+A Flutter-based voting application that allows users to vote for nominees across different categories using a points-based system.
+
+## Features
+
+- **Authentication System**
+  - Admin access with special admin code
+  - User access through generated access codes
+  - Single-use access codes for voting
+
+- **Admin Dashboard**
+  - View voting results
+  - Manage categories
+  - Manage nominees
+  - Generate and manage access codes
+
+- **Voting System**
+  - Points-based voting (5pts for 1st, 3pts for 2nd, 1pt for 3rd choice)
+  - Multiple categories support
+  - Real-time progress tracking
+  - Vote submission confirmation
+
+## Tech Stack
+
+- Flutter for cross-platform development
+- Firebase for backend services
+  - Cloud Firestore for database
+  - Firebase Authentication
+- Material Design 3 for UI components
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+### Prerequisites
 
-A few resources to get you started if this is your first Flutter project:
+- Flutter (latest stable version)
+- Firebase account
+- IDE (VS Code recommended)
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+### Installation
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+1. Clone the repository:
+```bash
+git clone <repository-url>
+```
+
+2. Install dependencies:
+```bash
+flutter pub get
+```
+
+3. Configure Firebase:
+   - Create a new Firebase project
+   - Add your Firebase configuration files
+   - Enable Cloud Firestore
+
+4. Run the app:
+```bash
+flutter run
+```
+
+## Project Structure
+
+```
+lib/
+  ├── models/          # Data models
+  ├── screens/         # UI screens
+  │   ├── admin/      # Admin dashboard screens
+  │   └── user/       # User voting screens
+  ├── services/       # Business logic and API services
+  └── widgets/        # Reusable UI components
+```
+
+## Building for Different Platforms
+
+### Android
+```bash
+flutter build apk
+```
+
+### iOS
+```bash
+flutter build ios
+```
+
+### Web
+```bash
+flutter build web
+```
+
+### Desktop (Windows, macOS, Linux)
+```bash
+flutter build <platform>
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a new branch
+3. Make your changes
+4. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Contact
+
+For questions and support, please open an issue in the GitHub repository.
