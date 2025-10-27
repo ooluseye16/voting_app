@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:voting_app/models/voting_event.dart';
 import 'package:voting_app/services/firebase_service.dart';
 
 import '../../models/nominee.dart';
 
 class NomineesPage extends StatefulWidget {
-  const NomineesPage({super.key});
+  const NomineesPage({super.key, required this.event, this.onUpdate});
+  final VotingEvent event;
+  final VoidCallback? onUpdate;
 
   @override
   State<NomineesPage> createState() => _NomineesPageState();
@@ -21,7 +24,7 @@ class _NomineesPageState extends State<NomineesPage> {
   }
 
   Future<void> _loadNominees() async {
-    final nominees = await FirebaseService.getNominees();
+    final nominees = await FirebaseService.getNomineesForEvent(widget.event.id);
     setState(() {
       _nominees = nominees;
       _isLoading = false;
@@ -29,11 +32,12 @@ class _NomineesPageState extends State<NomineesPage> {
   }
 
   void _showAddNomineeDialog() {
+    final outerContext = context; // capture the valid parent context
     final nameController = TextEditingController();
 
     showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
+      context: outerContext,
+      builder: (dialogContext) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text(
           'Add Nominee',
@@ -51,7 +55,7 @@ class _NomineesPageState extends State<NomineesPage> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
@@ -59,20 +63,23 @@ class _NomineesPageState extends State<NomineesPage> {
               final name = nameController.text.trim();
 
               if (name.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
+                ScaffoldMessenger.of(outerContext).showSnackBar(
                   const SnackBar(content: Text('Please enter a nominee name')),
                 );
                 return;
               }
 
-              await FirebaseService.addNominee(name);
-              Navigator.pop(context);
-              _loadNominees();
+              final nominee = Nominee(id: '', name: name);
+              await FirebaseService.addNominee(widget.event.id, nominee.name);
 
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
+              if (dialogContext.mounted) Navigator.pop(dialogContext);
+              await _loadNominees();
+              widget.onUpdate?.call();
+
+              if (outerContext.mounted) {
+                ScaffoldMessenger.of(outerContext).showSnackBar(
                   SnackBar(
-                    content: const Text('Nominee added successfully'),
+                    content: Text('✅ Nominee added: ${nominee.name}'),
                     backgroundColor: Colors.green.shade600,
                   ),
                 );
@@ -111,8 +118,10 @@ class _NomineesPageState extends State<NomineesPage> {
     );
 
     if (confirm == true) {
-      await FirebaseService.deleteNominee(nominee.id);
-      _loadNominees();
+      await FirebaseService.deleteNominee(widget.event.id, nominee.id);
+      await _loadNominees();
+      widget.onUpdate?.call();
+
       if (mounted) {
         ScaffoldMessenger.of(
           context,
@@ -144,7 +153,7 @@ class _NomineesPageState extends State<NomineesPage> {
                   ),
                   SizedBox(height: 4),
                   Text(
-                    'People who can be voted for in any category',
+                    'People who can be voted for in this event',
                     style: TextStyle(color: Colors.grey, fontSize: 14),
                   ),
                 ],

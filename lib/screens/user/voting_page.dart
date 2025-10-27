@@ -9,8 +9,15 @@ import 'success_page.dart';
 
 class VotingPage extends StatefulWidget {
   final String userCode;
+  final String eventId;
+  final String eventName;
 
-  const VotingPage({super.key, required this.userCode});
+  const VotingPage({
+    super.key,
+    required this.userCode,
+    required this.eventId,
+    required this.eventName,
+  });
 
   @override
   State<VotingPage> createState() => _VotingPageState();
@@ -31,20 +38,25 @@ class _VotingPageState extends State<VotingPage> {
 
   Future<void> _loadData() async {
     try {
-      final categories = await FirebaseService.getCategories();
-      final nominees = await FirebaseService.getNominees();
+      final categories = await FirebaseService.getCategoriesForEvent(
+        widget.eventId,
+      );
+      final nominees = await FirebaseService.getNomineesForEvent(
+        widget.eventId,
+      );
+
       setState(() {
         _categories = categories;
         _nominees = nominees;
-        _votes = {for (var cat in categories) cat.id: Vote(categoryId: cat.id)};
+        _votes = {for (var c in categories) c.id: Vote(categoryId: c.id)};
         _isLoading = false;
       });
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Failed to load data')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to load voting data')),
+        );
       }
     }
   }
@@ -57,10 +69,7 @@ class _VotingPageState extends State<VotingPage> {
 
   int _getCompletedCount() {
     return _votes.values
-        .where(
-          (vote) =>
-              vote.first != null && vote.second != null && vote.third != null,
-        )
+        .where((v) => v.first != null && v.second != null && v.third != null)
         .length;
   }
 
@@ -79,6 +88,7 @@ class _VotingPageState extends State<VotingPage> {
 
     try {
       final success = await FirebaseService.submitVotes(
+        widget.eventId,
         widget.userCode,
         _votes.values.toList(),
       );
@@ -87,12 +97,9 @@ class _VotingPageState extends State<VotingPage> {
         Navigator.pushReplacement(
           context,
           PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) =>
-                const SuccessPage(),
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) {
-                  return FadeTransition(opacity: animation, child: child);
-                },
+            pageBuilder: (_, __, ___) => const SuccessPage(),
+            transitionsBuilder: (_, animation, __, child) =>
+                FadeTransition(opacity: animation, child: child),
           ),
         );
       }
@@ -103,9 +110,7 @@ class _VotingPageState extends State<VotingPage> {
         ).showSnackBar(const SnackBar(content: Text('Failed to submit votes')));
       }
     } finally {
-      if (mounted) {
-        setState(() => _isSubmitting = false);
-      }
+      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
@@ -129,8 +134,8 @@ class _VotingPageState extends State<VotingPage> {
       );
     }
 
-    final totalCategories = _categories!.length;
-    final completedCategories = _getCompletedCount();
+    final total = _categories!.length;
+    final completed = _getCompletedCount();
 
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
@@ -154,9 +159,9 @@ class _VotingPageState extends State<VotingPage> {
               ),
             ),
             const SizedBox(width: 12),
-            const Text(
-              'Cast Your Votes',
-              style: TextStyle(
+            Text(
+              widget.eventName,
+              style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Colors.black87,
               ),
@@ -209,7 +214,7 @@ class _VotingPageState extends State<VotingPage> {
                       ),
                     ),
                     Text(
-                      '$completedCategories / $totalCategories completed',
+                      '$completed / $total completed',
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -222,7 +227,7 @@ class _VotingPageState extends State<VotingPage> {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: LinearProgressIndicator(
-                    value: completedCategories / totalCategories,
+                    value: completed / total,
                     minHeight: 8,
                     backgroundColor: Colors.grey.shade200,
                     valueColor: const AlwaysStoppedAnimation<Color>(
@@ -237,14 +242,14 @@ class _VotingPageState extends State<VotingPage> {
             child: ListView.builder(
               padding: const EdgeInsets.all(20),
               itemCount: _categories!.length,
-              itemBuilder: (context, index) {
+              itemBuilder: (_, index) {
                 final category = _categories![index];
                 return CategoryCard(
                   category: category,
                   nominees: _nominees!,
                   vote: _votes[category.id]!,
-                  onVoteChanged: (vote) {
-                    setState(() => _votes[category.id] = vote);
+                  onVoteChanged: (v) {
+                    setState(() => _votes[category.id] = v);
                   },
                 );
               },

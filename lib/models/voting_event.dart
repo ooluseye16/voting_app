@@ -20,13 +20,13 @@ class VotingEvent {
   });
 
   Map<String, dynamic> toJson() => {
-        'name': name,
-        'description': description,
-        'createdAt': createdAt,
-        'active': active,
-        'endDate': endDate,
-        'type': type,
-      };
+    'name': name,
+    'description': description,
+    'createdAt': createdAt,
+    'active': active,
+    'endDate': endDate,
+    'type': type,
+  };
 
   factory VotingEvent.fromFirestore(String id, Map<String, dynamic> data) =>
       VotingEvent(

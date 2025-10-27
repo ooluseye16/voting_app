@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:voting_app/services/firebase_service.dart';
-
 import '../../models/vote_result.dart';
+import '../../models/voting_event.dart';
 
-class ResultsPage extends StatefulWidget {
-  const ResultsPage({super.key});
+class EventResultsTab extends StatefulWidget {
+  final VotingEvent event;
+
+  const EventResultsTab({super.key, required this.event});
 
   @override
-  State<ResultsPage> createState() => _ResultsPageState();
+  State<EventResultsTab> createState() => _EventResultsTabState();
 }
 
-class _ResultsPageState extends State<ResultsPage> {
+class _EventResultsTabState extends State<EventResultsTab> {
   List<VoteResult>? _results;
   bool _isLoading = true;
 
@@ -21,11 +23,20 @@ class _ResultsPageState extends State<ResultsPage> {
   }
 
   Future<void> _loadResults() async {
-    final results = await FirebaseService.getResults();
-    setState(() {
-      _results = results;
-      _isLoading = false;
-    });
+    try {
+      final results = await FirebaseService.getResultsForEvent(widget.event.id);
+      setState(() {
+        _results = results;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to load results')),
+        );
+      }
+    }
   }
 
   @override
@@ -46,8 +57,9 @@ class _ResultsPageState extends State<ResultsPage> {
             ),
             const SizedBox(height: 16),
             Text(
-              'No results available yet',
+              'No results available yet for "${widget.event.name}"',
               style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -113,59 +125,7 @@ class _ResultsPageState extends State<ResultsPage> {
                     ),
                     child: Row(
                       children: [
-                        if (index < 3)
-                          Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: index == 0
-                                    ? [
-                                        const Color(0xFFFFD700),
-                                        const Color(0xFFFFA500),
-                                      ]
-                                    : index == 1
-                                    ? [
-                                        const Color(0xFFC0C0C0),
-                                        const Color(0xFF808080),
-                                      ]
-                                    : [
-                                        const Color(0xFFCD7F32),
-                                        const Color(0xFF8B4513),
-                                      ],
-                              ),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Center(
-                              child: Text(
-                                '${index + 1}',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ),
-                          )
-                        else
-                          Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade200,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Center(
-                              child: Text(
-                                '${index + 1}',
-                                style: TextStyle(
-                                  color: Colors.grey.shade700,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ),
-                          ),
+                        _buildRankIcon(index),
                         const SizedBox(width: 16),
                         Expanded(
                           child: Text(
@@ -208,5 +168,53 @@ class _ResultsPageState extends State<ResultsPage> {
         );
       },
     );
+  }
+
+  Widget _buildRankIcon(int index) {
+    if (index < 3) {
+      final colors = index == 0
+          ? [const Color(0xFFFFD700), const Color(0xFFFFA500)]
+          : index == 1
+              ? [const Color(0xFFC0C0C0), const Color(0xFF808080)]
+              : [const Color(0xFFCD7F32), const Color(0xFF8B4513)];
+
+      return Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(colors: colors),
+          shape: BoxShape.circle,
+        ),
+        child: Center(
+          child: Text(
+            '${index + 1}',
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          ),
+        ),
+      );
+    } else {
+      return Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: Colors.grey.shade200,
+          shape: BoxShape.circle,
+        ),
+        child: Center(
+          child: Text(
+            '${index + 1}',
+            style: TextStyle(
+              color: Colors.grey.shade700,
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          ),
+        ),
+      );
+    }
   }
 }

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:voting_app/services/firebase_service.dart';
-
 import 'admin/admin_dashboard.dart';
 import 'user/voting_page.dart';
 
@@ -39,7 +38,7 @@ class _LoginPageState extends State<LoginPage>
     super.dispose();
   }
 
-  Future<void> _login() async {
+  Future<void> _validateAndLogin() async {
     final code = _codeController.text.trim();
 
     if (code.isEmpty) {
@@ -53,56 +52,82 @@ class _LoginPageState extends State<LoginPage>
     });
 
     try {
-      final role = await FirebaseService.validateCodeAndGetRole(code);
-
-      if (role == 'invalid') {
-        setState(() => _errorMessage = 'Invalid access code');
-        return;
-      }
-
-      if (role == 'admin') {
+      // ADMIN login shortcut
+      if (code == FirebaseService.adminCode) {
         if (mounted) {
           Navigator.pushReplacement(
             context,
             PageRouteBuilder(
-              pageBuilder: (context, animation, secondaryAnimation) =>
-                  const AdminDashboard(),
-              transitionsBuilder:
-                  (context, animation, secondaryAnimation, child) {
-                    return FadeTransition(opacity: animation, child: child);
-                  },
+              pageBuilder: (_, __, ___) => const AdminDashboard(),
+              transitionsBuilder: (_, animation, __, child) =>
+                  FadeTransition(opacity: animation, child: child),
             ),
           );
         }
         return;
       }
 
-      final hasVoted = await FirebaseService.checkIfAlreadyVoted(code);
+      // USER login (event-scoped)
+      final codeData = await FirebaseService.findAccessCode(code);
 
-      if (hasVoted) {
-        setState(() => _errorMessage = 'You have already submitted your votes');
+      if (codeData == null) {
+        setState(() => _errorMessage = 'Invalid or already used access code');
         return;
       }
 
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) =>
-                VotingPage(userCode: code),
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) {
-                  return FadeTransition(opacity: animation, child: child);
-                },
+      if (!mounted) return;
+
+      // Show event confirmation
+      await showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Welcome!'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('You are voting for:'),
+              const SizedBox(height: 8),
+              Text(
+                codeData.eventName,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF6366F1),
+                ),
+              ),
+            ],
           ),
-        );
-      }
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.pushReplacement(
+                  context,
+                  PageRouteBuilder(
+                    pageBuilder: (_, __, ___) => VotingPage(
+                      userCode: code,
+                      eventId: codeData.eventId,
+                      eventName: codeData.eventName,
+                    ),
+                    transitionsBuilder: (_, animation, __, child) =>
+                        FadeTransition(opacity: animation, child: child),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF6366F1),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Start Voting'),
+            ),
+          ],
+        ),
+      );
     } catch (e) {
       setState(() => _errorMessage = 'An error occurred. Please try again.');
+      debugPrint('Login error: $e');
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -110,14 +135,14 @@ class _LoginPageState extends State<LoginPage>
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              const Color(0xFF6366F1),
-              const Color(0xFF8B5CF6),
-              const Color(0xFFEC4899),
+              Color(0xFF6366F1),
+              Color(0xFF8B5CF6),
+              Color(0xFFEC4899),
             ],
           ),
         ),
@@ -180,11 +205,12 @@ class _LoginPageState extends State<LoginPage>
                           ),
                           decoration: InputDecoration(
                             labelText: 'Access Code',
-                            prefixIcon: const Icon(Icons.lock_outline_rounded),
+                            prefixIcon:
+                                const Icon(Icons.lock_outline_rounded),
                             errorText: _errorMessage,
                             errorMaxLines: 2,
                           ),
-                          onSubmitted: (_) => _login(),
+                          onSubmitted: (_) => _validateAndLogin(),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 32),
@@ -192,7 +218,7 @@ class _LoginPageState extends State<LoginPage>
                           width: double.infinity,
                           height: 54,
                           child: ElevatedButton(
-                            onPressed: _isLoading ? null : _login,
+                            onPressed: _isLoading ? null : _validateAndLogin,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF6366F1),
                               foregroundColor: Colors.white,

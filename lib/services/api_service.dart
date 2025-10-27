@@ -1,14 +1,15 @@
 import 'dart:math';
-import '../models/nominee.dart';
-import '../models/category.dart';
-import '../models/vote.dart';
+
 import '../models/access_code.dart';
+import '../models/category.dart';
+import '../models/nominee.dart';
+import '../models/vote.dart';
 import '../models/vote_result.dart';
 
 class ApiService {
   static const String adminCode = 'ADMIN123';
 
-  static List<Nominee> _nominees = [
+  static final List<Nominee> _nominees = [
     Nominee(id: '1', name: 'John Doe'),
     Nominee(id: '2', name: 'Jane Smith'),
     Nominee(id: '3', name: 'Bob Johnson'),
@@ -16,13 +17,13 @@ class ApiService {
     Nominee(id: '5', name: 'Sarah Davis'),
   ];
 
-  static List<Category> _categories = [
+  static final List<Category> _categories = [
     Category(id: '1', name: 'Best Analyst'),
     Category(id: '2', name: 'Best Team Player'),
   ];
 
-  static List<AccessCode> _accessCodes = [];
-  static Map<String, List<Vote>> _submittedVotes = {};
+  static final List<AccessCode> _accessCodes = [];
+  static final Map<String, List<Vote>> _submittedVotes = {};
 
   static Future<String> validateCodeAndGetRole(String code) async {
     await Future.delayed(const Duration(seconds: 1));
@@ -52,6 +53,8 @@ class ApiService {
     final codeIndex = _accessCodes.indexWhere((ac) => ac.code == code);
     if (codeIndex != -1) {
       _accessCodes[codeIndex] = AccessCode(
+        eventId: _accessCodes[codeIndex].eventId,
+        eventName: _accessCodes[codeIndex].eventName,
         code: _accessCodes[codeIndex].code,
         generatedFor: _accessCodes[codeIndex].generatedFor,
         generated: _accessCodes[codeIndex].generated,
@@ -61,20 +64,31 @@ class ApiService {
     return true;
   }
 
-  static Future<String> generateAccessCode(String name) async {
+  static Future<String> generateAccessCode({
+    required String name,
+    required String eventId,
+    required String eventName,
+  }) async {
     await Future.delayed(const Duration(milliseconds: 500));
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     final random = Random();
     String code;
     do {
-      code = List.generate(8, (index) => chars[random.nextInt(chars.length)]).join();
+      code = List.generate(
+        8,
+        (index) => chars[random.nextInt(chars.length)],
+      ).join();
     } while (_accessCodes.any((ac) => ac.code == code));
 
-    _accessCodes.add(AccessCode(
-      code: code,
-      generatedFor: name,
-      generated: DateTime.now(),
-    ));
+    _accessCodes.add(
+      AccessCode(
+        eventId: eventId,
+        eventName: eventName,
+        code: code,
+        generatedFor: name,
+        generated: DateTime.now(),
+      ),
+    );
     return code;
   }
 
@@ -115,7 +129,7 @@ class ApiService {
 
     for (var category in _categories) {
       Map<String, int> scores = {};
-      
+
       for (var nominee in _nominees) {
         scores[nominee.name] = 0;
       }
@@ -130,18 +144,21 @@ class ApiService {
           scores[categoryVote.first!] = (scores[categoryVote.first!] ?? 0) + 5;
         }
         if (categoryVote.second != null) {
-          scores[categoryVote.second!] = (scores[categoryVote.second!] ?? 0) + 3;
+          scores[categoryVote.second!] =
+              (scores[categoryVote.second!] ?? 0) + 3;
         }
         if (categoryVote.third != null) {
           scores[categoryVote.third!] = (scores[categoryVote.third!] ?? 0) + 1;
         }
       }
 
-      results.add(VoteResult(
-        categoryId: category.id,
-        categoryName: category.name,
-        scores: scores,
-      ));
+      results.add(
+        VoteResult(
+          categoryId: category.id,
+          categoryName: category.name,
+          scores: scores,
+        ),
+      );
     }
 
     return results;

@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:voting_app/models/voting_event.dart';
 import 'package:voting_app/services/firebase_service.dart';
 
 import '../../models/category.dart';
 
 class CategoriesPage extends StatefulWidget {
-  const CategoriesPage({super.key});
+  const CategoriesPage({super.key, required this.event, this.onUpdate});
+
+  final VotingEvent event;
+  final VoidCallback? onUpdate;
 
   @override
   State<CategoriesPage> createState() => _CategoriesPageState();
@@ -21,7 +25,9 @@ class _CategoriesPageState extends State<CategoriesPage> {
   }
 
   Future<void> _loadCategories() async {
-    final categories = await FirebaseService.getCategories();
+    final categories = await FirebaseService.getCategoriesForEvent(
+      widget.event.id,
+    );
     setState(() {
       _categories = categories;
       _isLoading = false;
@@ -29,11 +35,13 @@ class _CategoriesPageState extends State<CategoriesPage> {
   }
 
   void _showAddCategoryDialog() {
+    final outerContext =
+        context; // capture parent context (still valid after pop)
     final nameController = TextEditingController();
 
     showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
+      context: outerContext,
+      builder: (dialogContext) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text(
           'Add Category',
@@ -51,28 +59,30 @@ class _CategoriesPageState extends State<CategoriesPage> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () async {
               final name = nameController.text.trim();
-
               if (name.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
+                ScaffoldMessenger.of(outerContext).showSnackBar(
                   const SnackBar(content: Text('Please enter a category name')),
                 );
                 return;
               }
 
-              await FirebaseService.addCategory(name);
-              Navigator.pop(context);
-              _loadCategories();
+              final category = Category(id: '', name: name);
+              await FirebaseService.addCategory(widget.event.id, category.name);
+
+              Navigator.pop(dialogContext);
+              await _loadCategories();
+              widget.onUpdate?.call();
 
               if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
+                ScaffoldMessenger.of(outerContext).showSnackBar(
                   SnackBar(
-                    content: const Text('Category added successfully'),
+                    content:  Text('✅ Category added: ${category.name}'),
                     backgroundColor: Colors.green.shade600,
                   ),
                 );
@@ -111,8 +121,10 @@ class _CategoriesPageState extends State<CategoriesPage> {
     );
 
     if (confirm == true) {
-      await FirebaseService.deleteCategory(category.id);
-      _loadCategories();
+      await FirebaseService.deleteCategory(widget.event.id, category.id);
+      await _loadCategories();
+      widget.onUpdate?.call();
+
       if (mounted) {
         ScaffoldMessenger.of(
           context,
@@ -144,7 +156,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
                   ),
                   SizedBox(height: 4),
                   Text(
-                    'Manage voting categories',
+                    'Manage voting categories for this event',
                     style: TextStyle(color: Colors.grey, fontSize: 14),
                   ),
                 ],

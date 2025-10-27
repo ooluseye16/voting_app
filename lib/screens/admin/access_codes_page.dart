@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:voting_app/models/access_code.dart';
+import 'package:voting_app/models/voting_event.dart';
 import 'package:voting_app/services/firebase_service.dart';
 
-import '../../models/access_code.dart';
-
 class AccessCodesPage extends StatefulWidget {
-  const AccessCodesPage({super.key});
+  const AccessCodesPage({super.key, required this.event, this.onUpdate});
+  final VotingEvent event;
+  final VoidCallback? onUpdate;
 
   @override
   State<AccessCodesPage> createState() => _AccessCodesPageState();
@@ -22,7 +24,7 @@ class _AccessCodesPageState extends State<AccessCodesPage> {
   }
 
   Future<void> _loadCodes() async {
-    final codes = await FirebaseService.getAccessCodes();
+    final codes = await FirebaseService.getAccessCodesForEvent(widget.event.id);
     setState(() {
       _codes = codes;
       _isLoading = false;
@@ -67,98 +69,18 @@ class _AccessCodesPageState extends State<AccessCodesPage> {
               }
 
               setState(() => _isLoading = true);
-              final code = await FirebaseService.generateAccessCode(name);
+              final code = await FirebaseService.generateAccessCodeForEvent(
+                name: name,
+                eventId: widget.event.id,
+                eventName: widget.event.name,
+              );
+
               Navigator.pop(context);
-              _loadCodes();
+              await _loadCodes();
+              widget.onUpdate?.call();
 
               if (mounted) {
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    title: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                            ),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(
-                            Icons.check_circle,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        const Text('Code Generated'),
-                      ],
-                    ),
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Access code for $name:',
-                          style: const TextStyle(fontSize: 15),
-                        ),
-                        const SizedBox(height: 20),
-                        Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                const Color(0xFF6366F1).withOpacity(0.1),
-                                const Color(0xFF8B5CF6).withOpacity(0.1),
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: const Color(0xFF6366F1).withOpacity(0.3),
-                              width: 2,
-                            ),
-                          ),
-                          child: Text(
-                            code,
-                            style: const TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'monospace',
-                              letterSpacing: 2,
-                              color: Color(0xFF6366F1),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    actions: [
-                      TextButton.icon(
-                        onPressed: () {
-                          Clipboard.setData(ClipboardData(text: code));
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text('Code copied to clipboard'),
-                              backgroundColor: Colors.green.shade600,
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.copy_rounded),
-                        label: const Text('Copy Code'),
-                      ),
-                      ElevatedButton(
-                        onPressed: () => Navigator.pop(context),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF6366F1),
-                          foregroundColor: Colors.white,
-                        ),
-                        child: const Text('Done'),
-                      ),
-                    ],
-                  ),
-                );
+                _showGeneratedCodeDialog(code, name);
               }
             },
             style: ElevatedButton.styleFrom(
@@ -166,6 +88,98 @@ class _AccessCodesPageState extends State<AccessCodesPage> {
               foregroundColor: Colors.white,
             ),
             child: const Text('Generate'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showGeneratedCodeDialog(String code, String name) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                ),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.check_circle,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text('Code Generated'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Access code for $name:',
+              style: const TextStyle(fontSize: 15),
+            ),
+            Text(
+              'Event: ${widget.event.name}',
+              style: const TextStyle(fontSize: 13, color: Colors.grey),
+            ),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFF6366F1).withOpacity(0.1),
+                    const Color(0xFF8B5CF6).withOpacity(0.1),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: const Color(0xFF6366F1).withOpacity(0.3),
+                  width: 2,
+                ),
+              ),
+              child: Text(
+                code,
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'monospace',
+                  letterSpacing: 2,
+                  color: Color(0xFF6366F1),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton.icon(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: code));
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Code copied to clipboard'),
+                  backgroundColor: Colors.green.shade600,
+                ),
+              );
+            },
+            icon: const Icon(Icons.copy_rounded),
+            label: const Text('Copy Code'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF6366F1),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Done'),
           ),
         ],
       ),
@@ -191,7 +205,7 @@ class _AccessCodesPageState extends State<AccessCodesPage> {
                   ),
                   SizedBox(height: 4),
                   Text(
-                    'Generate codes for users to vote',
+                    'Generate codes for users to vote in this event',
                     style: TextStyle(color: Colors.grey, fontSize: 14),
                   ),
                 ],
@@ -322,6 +336,7 @@ class _AccessCodesPageState extends State<AccessCodesPage> {
   }
 
   String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+    return '${date.day}/${date.month}/${date.year} '
+        '${date.hour}:${date.minute.toString().padLeft(2, '0')}';
   }
 }
