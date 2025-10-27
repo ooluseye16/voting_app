@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:voting_app/services/firebase_service.dart';
 
 import '../../models/vote_result.dart';
-import '../../services/api_service.dart';
 
 class ResultsPage extends StatefulWidget {
   const ResultsPage({super.key});
@@ -21,7 +21,7 @@ class _ResultsPageState extends State<ResultsPage> {
   }
 
   Future<void> _loadResults() async {
-    final results = await ApiService.getResults();
+    final results = await FirebaseService.getResults();
     setState(() {
       _results = results;
       _isLoading = false;

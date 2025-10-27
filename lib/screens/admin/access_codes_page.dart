@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:voting_app/services/firebase_service.dart';
 
 import '../../models/access_code.dart';
-import '../../services/api_service.dart';
 
 class AccessCodesPage extends StatefulWidget {
   const AccessCodesPage({super.key});
@@ -22,7 +22,7 @@ class _AccessCodesPageState extends State<AccessCodesPage> {
   }
 
   Future<void> _loadCodes() async {
-    final codes = await ApiService.getAccessCodes();
+    final codes = await FirebaseService.getAccessCodes();
     setState(() {
       _codes = codes;
       _isLoading = false;
@@ -67,7 +67,7 @@ class _AccessCodesPageState extends State<AccessCodesPage> {
               }
 
               setState(() => _isLoading = true);
-              final code = await ApiService.generateAccessCode(name);
+              final code = await FirebaseService.generateAccessCode(name);
               Navigator.pop(context);
               _loadCodes();
 

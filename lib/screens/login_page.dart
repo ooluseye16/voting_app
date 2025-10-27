@@ -1,17 +1,18 @@
-
 import 'package:flutter/material.dart';
-import '../services/api_service.dart';
+import 'package:voting_app/services/firebase_service.dart';
+
 import 'admin/admin_dashboard.dart';
 import 'user/voting_page.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({Key? key}) : super(key: key);
+  const LoginPage({super.key});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMixin {
+class _LoginPageState extends State<LoginPage>
+    with SingleTickerProviderStateMixin {
   final TextEditingController _codeController = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
@@ -40,7 +41,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
 
   Future<void> _login() async {
     final code = _codeController.text.trim();
-    
+
     if (code.isEmpty) {
       setState(() => _errorMessage = 'Please enter your access code');
       return;
@@ -52,8 +53,8 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
     });
 
     try {
-      final role = await ApiService.validateCodeAndGetRole(code);
-      
+      final role = await FirebaseService.validateCodeAndGetRole(code);
+
       if (role == 'invalid') {
         setState(() => _errorMessage = 'Invalid access code');
         return;
@@ -64,18 +65,20 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
           Navigator.pushReplacement(
             context,
             PageRouteBuilder(
-              pageBuilder: (context, animation, secondaryAnimation) => const AdminDashboard(),
-              transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                return FadeTransition(opacity: animation, child: child);
-              },
+              pageBuilder: (context, animation, secondaryAnimation) =>
+                  const AdminDashboard(),
+              transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) {
+                    return FadeTransition(opacity: animation, child: child);
+                  },
             ),
           );
         }
         return;
       }
 
-      final hasVoted = await ApiService.checkIfAlreadyVoted(code);
-      
+      final hasVoted = await FirebaseService.checkIfAlreadyVoted(code);
+
       if (hasVoted) {
         setState(() => _errorMessage = 'You have already submitted your votes');
         return;
@@ -85,10 +88,12 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
         Navigator.pushReplacement(
           context,
           PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => VotingPage(userCode: code),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              return FadeTransition(opacity: animation, child: child);
-            },
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                VotingPage(userCode: code),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
           ),
         );
       }

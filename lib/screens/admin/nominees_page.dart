@@ -1,10 +1,10 @@
-
 import 'package:flutter/material.dart';
-import '../../services/api_service.dart';
+import 'package:voting_app/services/firebase_service.dart';
+
 import '../../models/nominee.dart';
 
 class NomineesPage extends StatefulWidget {
-  const NomineesPage({Key? key}) : super(key: key);
+  const NomineesPage({super.key});
 
   @override
   State<NomineesPage> createState() => _NomineesPageState();
@@ -21,7 +21,7 @@ class _NomineesPageState extends State<NomineesPage> {
   }
 
   Future<void> _loadNominees() async {
-    final nominees = await ApiService.getNominees();
+    final nominees = await FirebaseService.getNominees();
     setState(() {
       _nominees = nominees;
       _isLoading = false;
@@ -35,7 +35,10 @@ class _NomineesPageState extends State<NomineesPage> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Add Nominee', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Add Nominee',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         content: SizedBox(
           width: 400,
           child: TextField(
@@ -54,7 +57,7 @@ class _NomineesPageState extends State<NomineesPage> {
           ElevatedButton(
             onPressed: () async {
               final name = nameController.text.trim();
-              
+
               if (name.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Please enter a nominee name')),
@@ -62,10 +65,10 @@ class _NomineesPageState extends State<NomineesPage> {
                 return;
               }
 
-              await ApiService.addNominee(name);
+              await FirebaseService.addNominee(name);
               Navigator.pop(context);
               _loadNominees();
-              
+
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -108,12 +111,12 @@ class _NomineesPageState extends State<NomineesPage> {
     );
 
     if (confirm == true) {
-      await ApiService.deleteNominee(nominee.id);
+      await FirebaseService.deleteNominee(nominee.id);
       _loadNominees();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Nominee deleted')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Nominee deleted')));
       }
     }
   }
@@ -164,11 +167,18 @@ class _NomineesPageState extends State<NomineesPage> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.people_outlined, size: 64, color: Colors.grey.shade300),
+                      Icon(
+                        Icons.people_outlined,
+                        size: 64,
+                        color: Colors.grey.shade300,
+                      ),
                       const SizedBox(height: 16),
                       Text(
                         'No nominees yet',
-                        style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.grey.shade600,
+                        ),
                       ),
                     ],
                   ),
@@ -190,7 +200,9 @@ class _NomineesPageState extends State<NomineesPage> {
                         child: Row(
                           children: [
                             CircleAvatar(
-                              backgroundColor: const Color(0xFF6366F1).withOpacity(0.1),
+                              backgroundColor: const Color(
+                                0xFF6366F1,
+                              ).withOpacity(0.1),
                               child: Text(
                                 nominee.name[0].toUpperCase(),
                                 style: const TextStyle(
@@ -211,7 +223,11 @@ class _NomineesPageState extends State<NomineesPage> {
                               ),
                             ),
                             IconButton(
-                              icon: Icon(Icons.delete_rounded, color: Colors.red.shade400, size: 20),
+                              icon: Icon(
+                                Icons.delete_rounded,
+                                color: Colors.red.shade400,
+                                size: 20,
+                              ),
                               onPressed: () => _deleteNominee(nominee),
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:voting_app/services/firebase_service.dart';
 
 import '../../models/category.dart';
-import '../../services/api_service.dart';
 
 class CategoriesPage extends StatefulWidget {
   const CategoriesPage({super.key});
@@ -21,7 +21,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
   }
 
   Future<void> _loadCategories() async {
-    final categories = await ApiService.getCategories();
+    final categories = await FirebaseService.getCategories();
     setState(() {
       _categories = categories;
       _isLoading = false;
@@ -65,7 +65,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
                 return;
               }
 
-              await ApiService.addCategory(name);
+              await FirebaseService.addCategory(name);
               Navigator.pop(context);
               _loadCategories();
 
@@ -111,7 +111,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
     );
 
     if (confirm == true) {
-      await ApiService.deleteCategory(category.id);
+      await FirebaseService.deleteCategory(category.id);
       _loadCategories();
       if (mounted) {
         ScaffoldMessenger.of(

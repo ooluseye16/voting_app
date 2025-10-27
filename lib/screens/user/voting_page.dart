@@ -1,6 +1,6 @@
-
 import 'package:flutter/material.dart';
-import '../../services/api_service.dart';
+import 'package:voting_app/services/firebase_service.dart';
+
 import '../../models/category.dart';
 import '../../models/nominee.dart';
 import '../../models/vote.dart';
@@ -10,7 +10,7 @@ import 'success_page.dart';
 class VotingPage extends StatefulWidget {
   final String userCode;
 
-  const VotingPage({Key? key, required this.userCode}) : super(key: key);
+  const VotingPage({super.key, required this.userCode});
 
   @override
   State<VotingPage> createState() => _VotingPageState();
@@ -31,8 +31,8 @@ class _VotingPageState extends State<VotingPage> {
 
   Future<void> _loadData() async {
     try {
-      final categories = await ApiService.getCategories();
-      final nominees = await ApiService.getNominees();
+      final categories = await FirebaseService.getCategories();
+      final nominees = await FirebaseService.getNominees();
       setState(() {
         _categories = categories;
         _nominees = nominees;
@@ -42,22 +42,25 @@ class _VotingPageState extends State<VotingPage> {
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to load data')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Failed to load data')));
       }
     }
   }
 
   bool _canSubmit() {
-    return _votes.values.every((vote) =>
-        vote.first != null && vote.second != null && vote.third != null);
+    return _votes.values.every(
+      (vote) => vote.first != null && vote.second != null && vote.third != null,
+    );
   }
 
   int _getCompletedCount() {
     return _votes.values
-        .where((vote) =>
-            vote.first != null && vote.second != null && vote.third != null)
+        .where(
+          (vote) =>
+              vote.first != null && vote.second != null && vote.third != null,
+        )
         .length;
   }
 
@@ -75,7 +78,7 @@ class _VotingPageState extends State<VotingPage> {
     setState(() => _isSubmitting = true);
 
     try {
-      final success = await ApiService.submitVotes(
+      final success = await FirebaseService.submitVotes(
         widget.userCode,
         _votes.values.toList(),
       );
@@ -84,18 +87,20 @@ class _VotingPageState extends State<VotingPage> {
         Navigator.pushReplacement(
           context,
           PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => const SuccessPage(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              return FadeTransition(opacity: animation, child: child);
-            },
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                const SuccessPage(),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
           ),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to submit votes')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Failed to submit votes')));
       }
     } finally {
       if (mounted) {
@@ -107,9 +112,7 @@ class _VotingPageState extends State<VotingPage> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     if (_categories == null || _categories!.isEmpty) {
@@ -144,7 +147,11 @@ class _VotingPageState extends State<VotingPage> {
                 ),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.how_to_vote_rounded, color: Colors.white, size: 20),
+              child: const Icon(
+                Icons.how_to_vote_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
             ),
             const SizedBox(width: 12),
             const Text(
@@ -161,7 +168,10 @@ class _VotingPageState extends State<VotingPage> {
             padding: const EdgeInsets.only(right: 16),
             child: Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF6366F1).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
@@ -215,7 +225,9 @@ class _VotingPageState extends State<VotingPage> {
                     value: completedCategories / totalCategories,
                     minHeight: 8,
                     backgroundColor: Colors.grey.shade200,
-                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      Color(0xFF6366F1),
+                    ),
                   ),
                 ),
               ],
@@ -255,7 +267,9 @@ class _VotingPageState extends State<VotingPage> {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: _isSubmitting || !_canSubmit() ? null : _submitVotes,
+                  onPressed: _isSubmitting || !_canSubmit()
+                      ? null
+                      : _submitVotes,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green.shade600,
                     foregroundColor: Colors.white,
