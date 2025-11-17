@@ -24,7 +24,7 @@ class _AccessCodesPageState extends State<AccessCodesPage> {
   }
 
   Future<void> _loadCodes() async {
-    final codes = await FirebaseService.getAccessCodesForEvent(widget.event.id);
+    final codes = await FirebaseService.getAccessCodes(widget.event.id);
     setState(() {
       _codes = codes;
       _isLoading = false;
@@ -69,7 +69,7 @@ class _AccessCodesPageState extends State<AccessCodesPage> {
               }
 
               setState(() => _isLoading = true);
-              final code = await FirebaseService.generateAccessCodeForEvent(
+              final code = await FirebaseService.generateAccessCode(
                 name: name,
                 eventId: widget.event.id,
                 eventName: widget.event.name,

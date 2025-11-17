@@ -70,7 +70,10 @@ class _NomineesPageState extends State<NomineesPage> {
               }
 
               final nominee = Nominee(id: '', name: name);
-              await FirebaseService.addNominee(widget.event.id, nominee.name);
+              await FirebaseService.addNomineeToEvent(
+                widget.event.id,
+                nominee.name,
+              );
 
               if (dialogContext.mounted) Navigator.pop(dialogContext);
               await _loadNominees();
@@ -118,7 +121,7 @@ class _NomineesPageState extends State<NomineesPage> {
     );
 
     if (confirm == true) {
-      await FirebaseService.deleteNominee(widget.event.id, nominee.id);
+      await FirebaseService.deleteNomineeFromEvent(widget.event.id, nominee.id);
       await _loadNominees();
       widget.onUpdate?.call();
 

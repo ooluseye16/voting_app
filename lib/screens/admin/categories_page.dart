@@ -73,7 +73,10 @@ class _CategoriesPageState extends State<CategoriesPage> {
               }
 
               final category = Category(id: '', name: name);
-              await FirebaseService.addCategory(widget.event.id, category.name);
+              await FirebaseService.addCategoryToEvent(
+                widget.event.id,
+                category.name,
+              );
 
               Navigator.pop(dialogContext);
               await _loadCategories();
@@ -82,7 +85,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
               if (mounted) {
                 ScaffoldMessenger.of(outerContext).showSnackBar(
                   SnackBar(
-                    content:  Text('✅ Category added: ${category.name}'),
+                    content: Text('✅ Category added: ${category.name}'),
                     backgroundColor: Colors.green.shade600,
                   ),
                 );
@@ -121,7 +124,10 @@ class _CategoriesPageState extends State<CategoriesPage> {
     );
 
     if (confirm == true) {
-      await FirebaseService.deleteCategory(widget.event.id, category.id);
+      await FirebaseService.deleteCategoryFromEvent(
+        widget.event.id,
+        category.id,
+      );
       await _loadCategories();
       widget.onUpdate?.call();
 

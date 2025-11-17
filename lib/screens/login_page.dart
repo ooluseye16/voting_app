@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:voting_app/services/firebase_service.dart';
+
 import 'admin/admin_dashboard.dart';
 import 'user/voting_page.dart';
 
@@ -52,8 +53,10 @@ class _LoginPageState extends State<LoginPage>
     });
 
     try {
-      // ADMIN login shortcut
-      if (code == FirebaseService.adminCode) {
+      // Check if it's ADMIN code and login
+      final isAdmin = await FirebaseService.loginAsAdmin(code);
+
+      if (isAdmin) {
         if (mounted) {
           Navigator.pushReplacement(
             context,
@@ -76,6 +79,17 @@ class _LoginPageState extends State<LoginPage>
       }
 
       if (!mounted) return;
+
+      // Check if user has already voted
+      final hasVoted = await FirebaseService.checkIfAlreadyVotedForEvent(
+        codeData.eventId,
+        code,
+      );
+
+      if (hasVoted) {
+        setState(() => _errorMessage = 'You have already voted with this code');
+        return;
+      }
 
       // Show event confirmation
       await showDialog(
@@ -139,11 +153,7 @@ class _LoginPageState extends State<LoginPage>
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF6366F1),
-              Color(0xFF8B5CF6),
-              Color(0xFFEC4899),
-            ],
+            colors: [Color(0xFF6366F1), Color(0xFF8B5CF6), Color(0xFFEC4899)],
           ),
         ),
         child: Center(
@@ -205,8 +215,7 @@ class _LoginPageState extends State<LoginPage>
                           ),
                           decoration: InputDecoration(
                             labelText: 'Access Code',
-                            prefixIcon:
-                                const Icon(Icons.lock_outline_rounded),
+                            prefixIcon: const Icon(Icons.lock_outline_rounded),
                             errorText: _errorMessage,
                             errorMaxLines: 2,
                           ),
