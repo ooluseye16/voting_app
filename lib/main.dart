@@ -12,7 +12,7 @@ void main() async {
 }
 
 class VotingApp extends StatelessWidget {
-  const VotingApp({Key? key}) : super(key: key);
+  const VotingApp({super.key});
 
   @override
   Widget build(BuildContext context) {
